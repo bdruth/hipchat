@@ -9,17 +9,27 @@
 (defn set-auth-token! [token]
   (reset! +auth-token+ token))
 
+(defmacro with-token [token & body]
+  `(binding [+auth-token+ token]
+     (do ~@body)))
+
 (def base-url "https://api.hipchat.com/v2")
 
 (defn request [method url & opts]
-  (let [request (http/request 
-                  {:url url
-                   :query-params {:auth_token @+auth-token+}
-                   :method method} opts)
+  (let [base-request {:url url
+                      :form-params (or opts {})
+                      :content-type "application/json"
+                      :query-params {:auth_token @+auth-token+}
+                      :method method}
+        request (http/request base-request nil)
         {:keys [status headers body error] :as resp} @request]
   (if (nil? error)
-    (json/parse-string body true)
-    {:error error :status status})))
+    (with-meta
+      (json/parse-string body true)
+        base-request)
+    {:request base-request 
+     :error error 
+     :status status})))
 
 (defn do-request 
   "Makes a http request based on a partial hipchat URL
@@ -29,20 +39,37 @@
     (request method full-url)))
 
 (def endpoints
-  {:rooms {:method :get :endpoint "/room"}})
+  {:rooms {:list {:method :get :endpoint "/room"}
+           :create {:method :post :endpoint "/room"}}})
 
-(defn lookup-params [resource]
- ((juxt :method :endpoint) (get endpoints resource)))
+(defn lookup-params [resource action]
+ ((juxt :method :endpoint) (get-in endpoints [resource action])))
 
 ;; Rooms API
 
-(defn rooms [token & opts]
-  (let [response (apply do-request 
-                   (conj (lookup-params :rooms) 
-                     (or opts {})))]
-  (->> response :items)))
+(defmacro bind-response-meta 
+  "Wraps a response and attaches meta-data
+   for debugging"
+  [resp & body]
+  `(with-meta (do ~@body) 
+     (meta ~resp)))
 
-(defn create-room [name & params]
-  )
+(defn rooms 
+  "Returns a list of all hipchat rooms"
+  [& opts]
+  (let [response (apply do-request 
+                   (conj (lookup-params :rooms :list) 
+                     (or opts {})))]
+  (bind-response-meta response
+    (->> response :items))))
+
+(defn create-room 
+  "Create a new hipchat room"
+  [name & params]
+  (let [response (apply do-request
+                   (conj (lookup-params :rooms :create) 
+                     {:name name}))]
+
+    response))
 
 
