@@ -55,10 +55,12 @@
 (def endpoints
   {:rooms {:list {:method :get :endpoint "/room"}
            :create {:method :post :endpoint "/room"}}
-   :users {:list {:method :get :endpoint "/user"}}})
+   :users {:list {:method :get :endpoint "/user"}
+           :show {:method :get :endpoint "/user/:id"}}})
 
 (defn lookup-params [resource action]
- ((juxt :method :endpoint) (get-in endpoints [resource action])))
+ ((juxt :method :endpoint) 
+   (get-in endpoints [resource action])))
 
 (defn fake-request 
   "Makes a HTTP request to RequestBin to debug any outgoing requests"
@@ -74,32 +76,54 @@
   `(with-meta (do ~@body) 
      (meta ~resp)))
 
+(defn is-id-action 
+  "Does a given action require id substitution?"
+  [endpoint]
+  (boolean (re-find #"/:id" endpoint)))
+
+(defn replace-id-resource 
+  "Update a resource action with correct id"
+  [resource action id]
+  (let [[r a] (lookup-params resource action)]
+    [r (clojure.string/replace-first a #":id" (str id))]))
+
 (defn resource-request 
-  "Generalized abstraction for typical REST type HTTP requests"
+  "Generalized abstraction for typical REST type HTTP requests
+   will do substitution on URL ids i.e /resource/:id if a map
+   with an ID key is passed in as opts i.e {:id 10}"
   [resource action & opts]
-  (let [response (apply do-request 
-                   (conj (lookup-params resource action)
-                     (or opts {})))]
-  (bind-response-meta response
-    (->> response :items))))
+  (let [opt-map (into {} opts)
+        [meth endp] (lookup-params resource action)
+        resource-vec (if (contains? opt-map :id) 
+                       (replace-id-resource resource action (:id opt-map))
+                       [meth endp])
+        response (apply do-request 
+                   (conj resource-vec opt-map))]
+   (bind-response-meta response
+     response)))
 
 (defn rooms 
   "Returns a list of all hipchat rooms"
   [& opts]
-  (resource-request :rooms :list))
+  (->>
+    (resource-request :rooms :list)
+    :items))
 
 (defn create-room 
   "Create a new hipchat room"
   [name & params]
-  (let [response (apply do-request
-                   (conj (lookup-params :rooms :create) 
-                     {:name name}))]
-    response))
+  (apply do-request
+    (conj (lookup-params :rooms :create) {:name name})))
 
 ;; Users API
 
 (defn users [& opts]
-  (resource-request :users :list))
+  (->> 
+    (resource-request :users :list) 
+    :items))
+
+(defn user [id]
+  (resource-request :users :show {:id id}))
 
 ;; Messages
 
