@@ -2,6 +2,8 @@
 
 A Clojure library for the HipChat API V2
 
+https://www.hipchat.com/docs/apiv2/auth
+
 ## Usage
 
 Get an auth token from HipChat.
@@ -11,9 +13,7 @@ Get an auth token from HipChat.
 (ns your-ns
   (require [hipchat.core :as hc]))
 
-(def auth-token "YOURAPITOKEN")
-
-(hc/set-auth-token! auth-token)
+(hc/set-auth-token! "YOURHIPCHATAPITOKEN")
 
 ```
 

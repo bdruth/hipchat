@@ -54,7 +54,8 @@
 
 (def endpoints
   {:rooms {:list {:method :get :endpoint "/room"}
-           :create {:method :post :endpoint "/room"}}})
+           :create {:method :post :endpoint "/room"}}
+   :users {:list {:method :get :endpoint "/user"}}})
 
 (defn lookup-params [resource action]
  ((juxt :method :endpoint) (get-in endpoints [resource action])))
@@ -73,14 +74,19 @@
   `(with-meta (do ~@body) 
      (meta ~resp)))
 
-(defn rooms 
-  "Returns a list of all hipchat rooms"
-  [& opts]
+(defn resource-request 
+  "Generalized abstraction for typical REST type HTTP requests"
+  [resource action & opts]
   (let [response (apply do-request 
-                   (conj (lookup-params :rooms :list) 
+                   (conj (lookup-params resource action)
                      (or opts {})))]
   (bind-response-meta response
     (->> response :items))))
+
+(defn rooms 
+  "Returns a list of all hipchat rooms"
+  [& opts]
+  (resource-request :rooms :list))
 
 (defn create-room 
   "Create a new hipchat room"
@@ -88,7 +94,15 @@
   (let [response (apply do-request
                    (conj (lookup-params :rooms :create) 
                      {:name name}))]
-
     response))
 
+;; Users API
+
+(defn users [& opts]
+  (resource-request :users :list))
+
+;; Messages
+
+(defn send-message-to-room [room-id message & opts]
+  )
 
