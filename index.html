@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Hipchat by owainlewis</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Hipchat</h1>
+        <p>Clojure Hipchat client</p>
+
+        <p class="view"><a href="https://github.com/owainlewis/hipchat">View the Project on GitHub <small>owainlewis/hipchat</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/owainlewis/hipchat/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/owainlewis/hipchat/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/owainlewis/hipchat">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="hipchat" class="anchor" href="#hipchat"><span class="octicon octicon-link"></span></a>HipChat</h1>
+
+<p>A Clojure library for the HipChat API V2</p>
+
+<p><a href="https://www.hipchat.com/docs/apiv2/auth">https://www.hipchat.com/docs/apiv2/auth</a></p>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>Get an auth token from HipChat.</p>
+
+<div class="highlight highlight-clojure"><pre>
+<span class="p">(</span><span class="kd">ns </span><span class="nv">your-ns</span>
+  <span class="p">(</span><span class="nf">require</span> <span class="p">[</span><span class="nv">hipchat.core</span> <span class="ss">:as</span> <span class="nv">hc</span><span class="p">]))</span>
+
+<span class="p">(</span><span class="nf">hc/set-auth-token!</span> <span class="s">"YOURHIPCHATAPITOKEN"</span><span class="p">)</span>
+
+</pre></div>
+
+<p>You can wrap all functions in a with-token macro if you want to pass your auth
+token explicitly into a request</p>
+
+<div class="highlight highlight-clojure"><pre><span class="p">(</span><span class="nf">hc/with-token</span> <span class="s">"YOURTOKEN"</span>
+  <span class="p">(</span><span class="nf">hc/rooms</span><span class="p">))</span>
+</pre></div>
+
+<h2>
+<a name="rooms" class="anchor" href="#rooms"><span class="octicon octicon-link"></span></a>Rooms</h2>
+
+<p>List all rooms</p>
+
+<div class="highlight highlight-clojure"><pre><span class="p">(</span><span class="nf">hc/rooms</span><span class="p">))</span>
+
+<span class="c1">;; =&gt; [{:id 325478, :links {:self "https://api.hipchat.com/v2/room/325478"}, :name "forward"}]</span>
+
+</pre></div>
+
+<p>Create a new HipChat room</p>
+
+<div class="highlight highlight-clojure"><pre>
+<span class="p">(</span><span class="nf">hc/create-room</span> <span class="s">"Product ideas"</span><span class="p">)</span>
+
+</pre></div>
+
+<h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Copyright © 2013 FIXME</p>
+
+<p>Distributed under the Eclipse Public License, the same as Clojure.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/owainlewis">owainlewis</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
