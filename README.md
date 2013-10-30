@@ -13,6 +13,16 @@ Get an auth token from HipChat.
 
 (def auth-token "YOURAPITOKEN")
 
+(hc/set-auth-token! auth-token)
+
+```
+
+You can wrap all functions in a with-token macro if you want to pass your auth
+token explicitly into a request
+
+```clojure
+(hc/with-token "YOURTOKEN"
+  (hc/rooms))
 ```
 
 ## Rooms
@@ -20,10 +30,17 @@ Get an auth token from HipChat.
 List all rooms
 
 ```clojure
-
-(rooms auth-token)
+(hc/rooms))
 
 ;; => [{:id 325478, :links {:self "https://api.hipchat.com/v2/room/325478"}, :name "forward"}]
+
+```
+
+Create a new HipChat room
+
+```clojure
+
+(hc/create-room "Product ideas")
 
 ```
 

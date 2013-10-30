@@ -3,23 +3,36 @@
             [cheshire.core :as json]))
 
 ;; Fake token for testing
-(def ^:dynamic +auth-token+ 
-  (atom "2Ites67Z8jHz9afmyjhrlBEqerX9h1DiGnJlwJuh"))
 
-(defn set-auth-token! [token]
+(def fake-token "2Ites67Z8jHz9afmyjhrlBEqerX9h1DiGnJlwJuh")
+
+(def ^:dynamic +auth-token+ 
+  (atom nil))
+
+(def http-debug "http://requestb.in/1awoam81")
+
+(defn set-auth-token! 
+  "Authorize!"
+  [token]
   (reset! +auth-token+ token))
 
 (defmacro with-token [token & body]
-  `(binding [+auth-token+ token]
+  `(binding [+auth-token+ ~token]
      (do ~@body)))
 
 (def base-url "https://api.hipchat.com/v2")
 
-(defn request [method url & opts]
-  (let [base-request {:url url
-                      :form-params (or opts {})
-                      :content-type "application/json"
-                      :query-params {:auth_token @+auth-token+}
+(defn request
+  "The core HTTP request function
+   which accepts an optional hash of JSON body params"
+  [method url & opts]
+  (assert ((complement nil?) @+auth-token+))
+  (let [f-params (into {} opts)
+        auth-params {:auth_token @+auth-token+}
+        base-request {:url url
+                      :body (json/generate-string f-params)
+                      :headers {"Content-Type" "application/json; charset=utf-8"}
+                      :query-params auth-params
                       :method method}
         request (http/request base-request nil)
         {:keys [status headers body error] :as resp} @request]
@@ -35,8 +48,9 @@
   "Makes a http request based on a partial hipchat URL
    i.e /room etc"
   [method partial-url & opts]
+  (print opts)
   (let [full-url (str base-url partial-url)]
-    (request method full-url)))
+    (request method full-url (into {} opts))))
 
 (def endpoints
   {:rooms {:list {:method :get :endpoint "/room"}
@@ -44,6 +58,11 @@
 
 (defn lookup-params [resource action]
  ((juxt :method :endpoint) (get-in endpoints [resource action])))
+
+(defn fake-request 
+  "Makes a HTTP request to RequestBin to debug any outgoing requests"
+  [method & opts]
+  (request method http-debug (into {} opts)))
 
 ;; Rooms API
 
