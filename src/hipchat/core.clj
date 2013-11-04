@@ -57,10 +57,12 @@
     (request method full-url (into {} opts))))
 
 (def endpoints
-  {:rooms {:list {:method :get :endpoint "/room"}
-           :create {:method :post :endpoint "/room"}}
-   :users {:list {:method :get :endpoint "/user"}
-           :show {:method :get :endpoint "/user/:id"}}})
+  { :capabilities {:list {:method :get :endpoint "/capabilities"}}
+    :emoticons {:list {:method :get :endpoint "/emoticon"}}
+     :rooms {:list {:method :get :endpoint "/room"}
+             :create {:method :post :endpoint "/room"}}
+     :users {:list {:method :get :endpoint "/user"}
+             :show {:method :get :endpoint "/user/:id"}}})
 
 (defn lookup-params [resource action]
  ((juxt :method :endpoint) 
@@ -125,13 +127,24 @@
   (apply do-request
     (conj (lookup-params :rooms :create) {:name name})))
 
+(defn capabilities []
+  (resource-request :capabilities :list))
+
+(defn with-items [resource action]
+  (->> (resource-request resource action) :items))
+
+(defn emoticons 
+  "API essentials : )"
+  []
+  (with-items :emoticons :list))
+
+(def emoticon-names (comp (partial map :shortcut) emoticons))
+
 ;; Users API
 ;; ******************************************************
 
 (defn users [& opts]
-  (->> 
-    (resource-request :users :list) 
-    :items))
+  (->> (resource-request :users :list) :items))
 
 (defn user [id]
   (resource-request :users :show {:id id}))
