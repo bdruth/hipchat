@@ -1,9 +1,14 @@
+;; ******************************************************
+;;
+;; Hipchat API utilities
+;;
+;; ******************************************************
+
 (ns hipchat.core
   (:require [org.httpkit.client :as http]
             [cheshire.core :as json]))
 
 ;; Fake token for testing
-
 (def fake-token "2Ites67Z8jHz9afmyjhrlBEqerX9h1DiGnJlwJuh")
 
 (def ^:dynamic +auth-token+ 
@@ -48,7 +53,6 @@
   "Makes a http request based on a partial hipchat URL
    i.e /room etc"
   [method partial-url & opts]
-  (print opts)
   (let [full-url (str base-url partial-url)]
     (request method full-url (into {} opts))))
 
@@ -68,6 +72,7 @@
   (request method http-debug (into {} opts)))
 
 ;; Rooms API
+;; ******************************************************
 
 (defmacro bind-response-meta 
   "Wraps a response and attaches meta-data
@@ -76,7 +81,7 @@
   `(with-meta (do ~@body) 
      (meta ~resp)))
 
-(defn is-id-action 
+(defn is-id-action  
   "Does a given action require id substitution?"
   [endpoint]
   (boolean (re-find #"/:id" endpoint)))
@@ -87,7 +92,7 @@
   (let [[r a] (lookup-params resource action)]
     [r (clojure.string/replace-first a #":id" (str id))]))
 
-(defn resource-request 
+(defn resource-request
   "Generalized abstraction for typical REST type HTTP requests
    will do substitution on URL ids i.e /resource/:id if a map
    with an ID key is passed in as opts i.e {:id 10}"
@@ -109,6 +114,11 @@
     (resource-request :rooms :list)
     :items))
 
+(def room-names 
+  "Extract a list of room names"
+  (let [room-names (partial map :name)]
+    (comp room-names rooms)))
+
 (defn create-room 
   "Create a new hipchat room"
   [name & params]
@@ -116,6 +126,7 @@
     (conj (lookup-params :rooms :create) {:name name})))
 
 ;; Users API
+;; ******************************************************
 
 (defn users [& opts]
   (->> 
@@ -126,7 +137,8 @@
   (resource-request :users :show {:id id}))
 
 ;; Messages
+;; ******************************************************
 
-(defn send-message-to-room [room-id message & opts]
-  )
+(defn send-message-to-room 
+  [room-id message & opts])
 
