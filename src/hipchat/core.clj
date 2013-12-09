@@ -42,14 +42,11 @@
         {:keys [status headers body error] :as resp} @request]
   (if (nil? error)
     (with-meta {:status status 
-                :body (json/parse-string body)} 
+                :body (json/parse-string body true)} 
       {:method method})
     {:request base-request 
      :error error 
      :status status})))
-
-(defn req-test []
-  (request :get "https://api.hipchat.com/v1/room"))
 
 (defn do-request 
   "Makes a http request based on a partial hipchat URL
@@ -149,9 +146,7 @@
 (defn rooms 
   "Returns a list of all hipchat rooms"
   [& opts]
-  (->>
-    (resource-request :rooms :list)
-    :items))
+  (->> (resource-request :rooms :list) :body :items))
 
 (def room-names 
   "Extract a list of room names"
@@ -170,9 +165,6 @@
   [id-or-name]
   (resource-request :rooms :show {:id id-or-name}))
 
-(defn send-message-to-room 
-  [room-id message & opts])
-
 (defn room-members 
   "TODO check this endpoint?"
   [room-identifier]
@@ -181,7 +173,7 @@
     (do-request :get
       (format "/room/%s/member" room-identifier))))
 
-(defn create-message
+(defn message
   "Create a new hipchat room
    room can be either an id or room name
    Optional params
