@@ -47,9 +47,11 @@ Create a new HipChat room
 Send a message to a hipchat room
 
 ```clojure
-(hc/with-token (atom fake-token) 
-  (hc/create-message "startups" "Hi @user. How are you?" 
-    {:color "red"}))
+(hc/create-message "startups" "Hi @user. How are you?")
+
+;; An optional params hash can be passed in to set the color of the hipchat message
+;; See the API docs for other params that can be passed in
+(hc/create-message "startups" "Hi @user. How are you?" {:color "red"})
 ```
 
 ## License
