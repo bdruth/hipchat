@@ -14,14 +14,13 @@
 (def ^:dynamic +auth-token+ 
   (atom nil))
 
-(def http-debug "http://requestb.in/1awoam81")
-
 (defn set-auth-token! 
   "Authorize!"
   [token]
   (reset! +auth-token+ token))
 
-(defmacro with-token [token & body]
+(defmacro with-token 
+  [token & body]
   `(binding [+auth-token+ ~token]
      (do ~@body)))
 
@@ -42,12 +41,15 @@
         request (http/request base-request nil)
         {:keys [status headers body error] :as resp} @request]
   (if (nil? error)
-    (with-meta
-      (json/parse-string body true)
-        base-request)
+    (with-meta {:status status 
+                :body (json/parse-string body)} 
+      {:method method})
     {:request base-request 
      :error error 
      :status status})))
+
+(defn req-test []
+  (request :get "https://api.hipchat.com/v1/room"))
 
 (defn do-request 
   "Makes a http request based on a partial hipchat URL
@@ -56,25 +58,25 @@
   (let [full-url (str base-url partial-url)]
     (request method full-url (into {} opts))))
 
+(defn fake-request 
+  "Makes a HTTP request to RequestBin to debug any outgoing requests"
+  [method & opts]
+  (let [http-debug-url "http://requestb.in/1awoam81"]
+    (request method http-debug-url (into {} opts))))
+
 (def endpoints
   { :capabilities {:list {:method :get :endpoint "/capabilities"}}
     :emoticons {:list {:method :get :endpoint "/emoticon"}}
-     :rooms {:list {:method :get :endpoint "/room"}
-             :create {:method :post :endpoint "/room"}}
-     :users {:list {:method :get :endpoint "/user"}
-             :show {:method :get :endpoint "/user/:id"}}})
+    :messages {:get {:method :get :endpoint "/rooms/message"}
+               :create {:method :post :endpoint "/rooms/message"}}
+    :rooms {:list {:method :get :endpoint "/room"}
+            :create {:method :post :endpoint "/room"}}
+    :users {:list {:method :get :endpoint "/user"}
+            :show {:method :get :endpoint "/user/:id"}}})
 
 (defn lookup-params [resource action]
  ((juxt :method :endpoint) 
    (get-in endpoints [resource action])))
-
-(defn fake-request 
-  "Makes a HTTP request to RequestBin to debug any outgoing requests"
-  [method & opts]
-  (request method http-debug (into {} opts)))
-
-;; Rooms API
-;; ******************************************************
 
 (defmacro bind-response-meta 
   "Wraps a response and attaches meta-data
@@ -109,6 +111,9 @@
    (bind-response-meta response
      response)))
 
+;; Rooms
+;; ******************************************************
+
 (defn rooms 
   "Returns a list of all hipchat rooms"
   [& opts]
@@ -125,7 +130,8 @@
   "Create a new hipchat room"
   [name & params]
   (apply do-request
-    (conj (lookup-params :rooms :create) {:name name})))
+    (conj (lookup-params :rooms :create) 
+      {:name name})))
 
 (defn capabilities []
   (resource-request :capabilities :list))
@@ -133,14 +139,18 @@
 (defn with-items [resource action]
   (->> (resource-request resource action) :items))
 
+;; Emoticons
+;; ******************************************************
+
 (defn emoticons 
   "API essentials : )"
   []
   (with-items :emoticons :list))
 
-(def emoticon-names (comp (partial map :shortcut) emoticons))
+(def emoticon-names 
+  (comp (partial map :shortcut) emoticons))
 
-;; Users API
+;; Users
 ;; ******************************************************
 
 (defn users [& opts]
@@ -149,9 +159,33 @@
 (defn user [id]
   (resource-request :users :show {:id id}))
 
-;; Messages
+;; Rooms
 ;; ******************************************************
 
 (defn send-message-to-room 
   [room-id message & opts])
+
+(defn room-members [room-identifier]
+  (let [room-name (if (keyword? room-identifier) 
+                    (name room-identifier) room-identifier)]
+    (do-request :get
+      (format "/room/%s/member" room-identifier))))
+
+(defn create-message
+  "Create a new hipchat room
+   room can be either an id or room name
+   Optional params
+     - color string [yellow, red, green, purple, gray ]
+     - notify boolean"
+  [room message & params]
+  (let [room-name (if (keyword? room) (name room) room)
+        room-url (format "/room/%s/notification" room-name)]
+      (apply (partial do-request :post) 
+               [room-url (merge-with conj 
+                           {:message message} (into {} params))])))
+
+(comment
+  (with-token (atom fake-token) 
+    (create-message :forward "Hi there @OwainLewis" 
+      {:color "red"})))
 

@@ -44,6 +44,14 @@ Create a new HipChat room
 
 ```
 
+Send a message to a hipchat room
+
+```clojure
+(hc/with-token (atom fake-token) 
+  (hc/create-message "startups" "Hi @user. How are you?" 
+    {:color "red"}))
+```
+
 ## License
 
 Copyright © 2013 FIXME
