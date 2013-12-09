@@ -65,14 +65,20 @@
     (request method http-debug-url (into {} opts))))
 
 (def endpoints
-  { :capabilities {:list {:method :get :endpoint "/capabilities"}}
-    :emoticons {:list {:method :get :endpoint "/emoticon"}}
-    :messages {:get {:method :get :endpoint "/rooms/message"}
-               :create {:method :post :endpoint "/rooms/message"}}
-    :rooms {:list {:method :get :endpoint "/room"}
-            :create {:method :post :endpoint "/room"}}
-    :users {:list {:method :get :endpoint "/user"}
-            :show {:method :get :endpoint "/user/:id"}}})
+  { :capabilities 
+      {:list {:method :get :endpoint "/capabilities"}}
+    :emoticons 
+      {:list {:method :get :endpoint "/emoticon"}}
+    :messages 
+       {:get {:method :get :endpoint "/rooms/message"}
+        :create {:method :post :endpoint "/rooms/message"}}
+    :rooms 
+      {:list {:method :get :endpoint "/room"}
+       :show {:method :get :endpoint "/room/:id"}
+       :create {:method :post :endpoint "/room"}}
+    :users 
+      {:list {:method :get :endpoint "/user"}
+       :show {:method :get :endpoint "/user/:id"}}})
 
 (defn lookup-params [resource action]
  ((juxt :method :endpoint) 
@@ -111,28 +117,6 @@
    (bind-response-meta response
      response)))
 
-;; Rooms
-;; ******************************************************
-
-(defn rooms 
-  "Returns a list of all hipchat rooms"
-  [& opts]
-  (->>
-    (resource-request :rooms :list)
-    :items))
-
-(def room-names 
-  "Extract a list of room names"
-  (let [room-names (partial map :name)]
-    (comp room-names rooms)))
-
-(defn create-room 
-  "Create a new hipchat room"
-  [name & params]
-  (apply do-request
-    (conj (lookup-params :rooms :create) 
-      {:name name})))
-
 (defn capabilities []
   (resource-request :capabilities :list))
 
@@ -162,10 +146,36 @@
 ;; Rooms
 ;; ******************************************************
 
+(defn rooms 
+  "Returns a list of all hipchat rooms"
+  [& opts]
+  (->>
+    (resource-request :rooms :list)
+    :items))
+
+(def room-names 
+  "Extract a list of room names"
+  (let [room-names (partial map :name)]
+    (comp room-names rooms)))
+
+(defn create-room 
+  "Create a new hipchat room"
+  [name & params]
+  (apply do-request
+    (conj (lookup-params :rooms :create) 
+      {:name name})))
+
+(defn room
+  "Get a single room"
+  [id-or-name]
+  (resource-request :rooms :show {:id id-or-name}))
+
 (defn send-message-to-room 
   [room-id message & opts])
 
-(defn room-members [room-identifier]
+(defn room-members 
+  "TODO check this endpoint?"
+  [room-identifier]
   (let [room-name (if (keyword? room-identifier) 
                     (name room-identifier) room-identifier)]
     (do-request :get
@@ -175,7 +185,7 @@
   "Create a new hipchat room
    room can be either an id or room name
    Optional params
-     - color string [yellow, red, green, purple, gray ]
+     - color string [yellow, red, green, purple, gray]
      - notify boolean"
   [room message & params]
   (let [room-name (if (keyword? room) (name room) room)
