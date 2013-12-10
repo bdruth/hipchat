@@ -72,7 +72,8 @@
     :rooms
       {:list {:method :get :endpoint "/room"}
        :show {:method :get :endpoint "/room/:id"}
-       :create {:method :post :endpoint "/room"}}
+       :create {:method :post :endpoint "/room"}
+       :notification {:method :post :endpoint "/room/:id/notification"}}
     :users
       {:list {:method :get :endpoint "/user"}
        :show {:method :get :endpoint "/user/:id"}}})
@@ -191,3 +192,8 @@
     (create-message :forward "Hi there @OwainLewis"
       {:color "red"})))
 
+(defn send-message-to-room
+  [room-id message & opts]
+  (resource-request :rooms :notification
+                    (merge (apply hash-map opts)
+                           {:message message :id room-id})))
