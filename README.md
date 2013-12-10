@@ -4,6 +4,12 @@ A Clojure library for the HipChat API V2
 
 https://www.hipchat.com/docs/apiv2/auth
 
+## Clojars
+
+```
+
+```
+
 ## Usage
 
 Get an auth token from HipChat.

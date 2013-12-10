@@ -1,4 +1,4 @@
-(defproject hipchat "0.1.0-SNAPSHOT"
+(defproject hipchat "0.1.1"
   :description "Hipchat client for Clojure"
   :url "https://github.com/owainlewis/hipchat"
   :license {:name "Eclipse Public License"
