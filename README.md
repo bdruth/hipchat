@@ -58,6 +58,29 @@ Send a message to a hipchat room
 (hc/message "startups" "Hi @user. How are you?" {:color "red"})
 ```
 
+Send an HTML message to a room:
+
+```clojure
+(hc/send-message-to-room 325478 "Hello from <b>Clojure</b>" :color "purple")
+```
+
+Send a text message to a room:
+
+```clojure
+(hc/send-message-to-room 325478 "Hello from Clojure" :message_format "text")
+```
+
+Valid options are:
+
+* `color`: yellow, red, green, purple, gray, random (default: 'yellow')
+* `notify`: true, false - whether or not to notify the users in the room (default:
+  false)
+* `message_format`: html, text
+
+See the [Hipchat API v2
+documentation](https://www.hipchat.com/docs/apiv2/method/send_room_notification)
+for details of the options.
+
 ## License
 
 Copyright © 2013 FIXME

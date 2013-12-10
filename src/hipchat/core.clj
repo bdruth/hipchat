@@ -11,15 +11,15 @@
 ;; Fake token for testing
 (def fake-token "2Ites67Z8jHz9afmyjhrlBEqerX9h1DiGnJlwJuh")
 
-(def ^:dynamic +auth-token+ 
+(def ^:dynamic +auth-token+
   (atom nil))
 
-(defn set-auth-token! 
+(defn set-auth-token!
   "Authorize!"
   [token]
   (reset! +auth-token+ token))
 
-(defmacro with-token 
+(defmacro with-token
   [token & body]
   `(binding [+auth-token+ ~token]
      (do ~@body)))
@@ -41,59 +41,60 @@
         request (http/request base-request nil)
         {:keys [status headers body error] :as resp} @request]
   (if (nil? error)
-    (with-meta {:status status 
-                :body (json/parse-string body true)} 
+    (with-meta {:status status
+                :body (json/parse-string body true)}
       {:method method})
-    {:request base-request 
-     :error error 
+    {:request base-request
+     :error error
      :status status})))
 
-(defn do-request 
+(defn do-request
   "Makes a http request based on a partial hipchat URL
    i.e /room etc"
   [method partial-url & opts]
   (let [full-url (str base-url partial-url)]
     (request method full-url (into {} opts))))
 
-(defn fake-request 
+(defn fake-request
   "Makes a HTTP request to RequestBin to debug any outgoing requests"
   [method & opts]
   (let [http-debug-url "http://requestb.in/1awoam81"]
     (request method http-debug-url (into {} opts))))
 
 (def endpoints
-  { :capabilities 
+  { :capabilities
       {:list {:method :get :endpoint "/capabilities"}}
-    :emoticons 
+    :emoticons
       {:list {:method :get :endpoint "/emoticon"}}
-    :messages 
+    :messages
        {:get {:method :get :endpoint "/rooms/message"}
         :create {:method :post :endpoint "/rooms/message"}}
-    :rooms 
+    :rooms
       {:list {:method :get :endpoint "/room"}
        :show {:method :get :endpoint "/room/:id"}
-       :create {:method :post :endpoint "/room"}}
-    :users 
+       :create {:method :post :endpoint "/room"}
+       :notification {:method :post :endpoint "/room/:id/notification"}}
+    :users
       {:list {:method :get :endpoint "/user"}
        :show {:method :get :endpoint "/user/:id"}}})
 
 (defn lookup-params [resource action]
- ((juxt :method :endpoint) 
+ ((juxt :method :endpoint)
    (get-in endpoints [resource action])))
 
-(defmacro bind-response-meta 
+(defmacro bind-response-meta
   "Wraps a response and attaches meta-data
    for debugging"
   [resp & body]
-  `(with-meta (do ~@body) 
+  `(with-meta (do ~@body)
      (meta ~resp)))
 
-(defn is-id-action  
+(defn is-id-action
   "Does a given action require id substitution?"
   [endpoint]
   (boolean (re-find #"/:id" endpoint)))
 
-(defn replace-id-resource 
+(defn replace-id-resource
   "Update a resource action with correct id"
   [resource action id]
   (let [[r a] (lookup-params resource action)]
@@ -106,10 +107,10 @@
   [resource action & opts]
   (let [opt-map (into {} opts)
         [meth endp] (lookup-params resource action)
-        resource-vec (if (contains? opt-map :id) 
+        resource-vec (if (contains? opt-map :id)
                        (replace-id-resource resource action (:id opt-map))
                        [meth endp])
-        response (apply do-request 
+        response (apply do-request
                    (conj resource-vec opt-map))]
    (bind-response-meta response
      response)))
@@ -123,12 +124,12 @@
 ;; Emoticons
 ;; ******************************************************
 
-(defn emoticons 
+(defn emoticons
   "API essentials : )"
   []
   (with-items :emoticons :list))
 
-(def emoticon-names 
+(def emoticon-names
   (comp (partial map :shortcut) emoticons))
 
 ;; Users
@@ -143,21 +144,21 @@
 ;; Rooms
 ;; ******************************************************
 
-(defn rooms 
+(defn rooms
   "Returns a list of all hipchat rooms"
   [& opts]
   (->> (resource-request :rooms :list) :body :items))
 
-(def room-names 
+(def room-names
   "Extract a list of room names"
   (let [room-names (partial map :name)]
     (comp room-names rooms)))
 
-(defn create-room 
+(defn create-room
   "Create a new hipchat room"
   [name & params]
   (apply do-request
-    (conj (lookup-params :rooms :create) 
+    (conj (lookup-params :rooms :create)
       {:name name})))
 
 (defn room
@@ -165,10 +166,10 @@
   [id-or-name]
   (resource-request :rooms :show {:id id-or-name}))
 
-(defn room-members 
+(defn room-members
   "TODO check this endpoint?"
   [room-identifier]
-  (let [room-name (if (keyword? room-identifier) 
+  (let [room-name (if (keyword? room-identifier)
                     (name room-identifier) room-identifier)]
     (do-request :get
       (format "/room/%s/member" room-identifier))))
@@ -182,12 +183,17 @@
   [room message & params]
   (let [room-name (if (keyword? room) (name room) room)
         room-url (format "/room/%s/notification" room-name)]
-      (apply (partial do-request :post) 
-               [room-url (merge-with conj 
+      (apply (partial do-request :post)
+               [room-url (merge-with conj
                            {:message message} (into {} params))])))
 
 (comment
-  (with-token (atom fake-token) 
-    (create-message :forward "Hi there @OwainLewis" 
+  (with-token (atom fake-token)
+    (create-message :forward "Hi there @OwainLewis"
       {:color "red"})))
 
+(defn send-message-to-room
+  [room-id message & opts]
+  (resource-request :rooms :notification
+                    (merge (apply hash-map opts)
+                           {:message message :id room-id})))
