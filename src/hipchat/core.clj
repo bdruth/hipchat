@@ -14,6 +14,10 @@
 (def ^:dynamic +auth-token+
   (atom nil))
 
+(defn require-argument [arg]
+  (when-not arg
+    (throw (Exception. (format "%s is a required argument" arg)))))
+
 (defn set-auth-token!
   "Authorize!"
   [token]
