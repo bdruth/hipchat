@@ -80,7 +80,8 @@
        :notification {:method :post :endpoint "/room/:id/notification"}}
     :users
       {:list {:method :get :endpoint "/user"}
-       :show {:method :get :endpoint "/user/:id"}}})
+       :show {:method :get :endpoint "/user/:id"}
+       :message {:method :post :endpoint "/user/:id/message"}}})
 
 (defn lookup-params [resource action]
  ((juxt :method :endpoint)
@@ -144,6 +145,14 @@
 
 (defn user [id]
   (resource-request :users :show {:id id}))
+
+(defn private-message
+   "Sends a private message to a user
+   This endpoint requires a user API token"
+   [user-id message & opts]
+   (resource-request :users :message
+                     (merge (apply hash-map opts)
+                            {:message message :id user-id})))
 
 ;; Rooms
 ;; ******************************************************
