@@ -7,7 +7,7 @@ https://www.hipchat.com/docs/apiv2/auth
 ## Clojars
 
 ```
-[hipchat-clj "0.1.2"]
+[hipchat-clj "0.1.3"]
 ```
 
 ## Usage
