@@ -141,7 +141,7 @@
 ;; ******************************************************
 
 (defn users [& opts]
-  (->> (resource-request :users :list) :items))
+  (->> (resource-request :users :list) :body :items))
 
 (defn user [id]
   (resource-request :users :show {:id id}))
